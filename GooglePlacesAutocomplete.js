@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import Geolocation from '@react-native-community/geolocation';
 import {
   TextInput,
   View,
@@ -177,8 +178,9 @@ export default class GooglePlacesAutocomplete extends Component {
   getCurrentLocation = () => {
     let options = {
       enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 1000
+      timeout: 100000,
+      maximumAge: 45000,
+      distanceFilter: 10,
     };
 
     if (this.props.enableHighAccuracyLocation && Platform.OS === 'android') {
@@ -187,8 +189,14 @@ export default class GooglePlacesAutocomplete extends Component {
         timeout: 20000
       }
     }
+    if (Platform.OS === 'ios') {
+      Geolocation.setRNConfiguration({
+        authorizationLevel: 'whenInUse',
+        skipPermissionRequests: 'false',
+      });
+    }
 
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
       (position) => {
         if (this.props.nearbyPlacesAPI === 'None') {
           let currentLocation = {
@@ -209,7 +217,7 @@ export default class GooglePlacesAutocomplete extends Component {
       },
       (error) => {
         this._disableRowLoaders();
-        alert(error.message);
+        alert(this.props.errorMessage);
       },
       options
     );
@@ -786,7 +794,9 @@ GooglePlacesAutocomplete.propTypes = {
   suppressDefaultStyles: PropTypes.bool,
   numberOfLines: PropTypes.number,
   onSubmitEditing: PropTypes.func,
-  editable: PropTypes.bool
+  editable: PropTypes.bool,
+  errorMessage: PropTypes.string,
+  noLocErrorMessage: PropTypes.string,
 }
 GooglePlacesAutocomplete.defaultProps = {
   placeholder: 'Search',
@@ -834,7 +844,9 @@ GooglePlacesAutocomplete.defaultProps = {
   suppressDefaultStyles: false,
   numberOfLines: 1,
   onSubmitEditing: () => {},
-  editable: true
+  editable: true,
+  errorMessage: "",
+  noLocErrorMessage: "",
 }
 
 // this function is still present in the library to be retrocompatible with version < 1.1.0
